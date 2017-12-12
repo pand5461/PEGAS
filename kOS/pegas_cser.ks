@@ -13,7 +13,7 @@ function SnC {
   else {
     local saz to sqrt(az).
     if z > 0 {
-      local x to saz * constant:degtorad.
+      local x to saz * constant:radtodeg.
       return lexicon("S", (saz - sin(x)) / (saz * az), "C", (1 - cos(x)) / az).
     }
     else {
