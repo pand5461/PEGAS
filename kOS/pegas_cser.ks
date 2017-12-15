@@ -1,71 +1,71 @@
-//	Conic State Extrapolation
+//      Conic State Extrapolation
 // Formulas follow H.D. Curtis, Orbital Mechanics for Engineering Students, Chapter 3.7
 // Radius vector scaled by its magnitude, velocity scaled by circular speed sqrt(mu/ r0)
 // With this scaling, mu_scaled = 1, so no need to bother about sqrt(mu) or 1 / mu etc.
 
 // Stumpff S and C functions
-function SnC {
-  parameter z.
-  local az to abs(z).
-  if az < 1e-4 {
-    return lexicon("S", (1 - z * ( 0.05 - z / 840) ) / 6, "C", 0.5 - z * ( 1 - z / 30) / 24).
-  }
-  else {
-    local saz to sqrt(az).
-    if z > 0 {
-      local x to saz * constant:radtodeg.
-      return lexicon("S", (saz - sin(x)) / (saz * az), "C", (1 - cos(x)) / az).
-    }
-    else {
-      local x to constant:e^saz.
-      return lexicon("S", (0.5 * (x - 1 / x) - saz) / (saz * az), "C", (0.5 * (x + 1 / x) - 1) / az).
-    }
-  }
+FUNCTION SnC {
+        DECLARE PARAMETER z.
+        LOCAL az IS ABS(z).
+        IF az < 1e-4 { 
+                RETURN LEXICON("S", (1 - z * ( 0.05 - z / 840) ) / 6, "C", 0.5 - z * ( 1 - z / 30) / 24).
+        }
+        ELSE {
+                LOCAL saz IS SQRT(az).
+                IF z > 0 {
+                        LOCAL x IS saz * CONSTANT:RADTODEG.
+                        RETURN LEXICON("S", (saz - SIN(x)) / (saz * az), "C", (1 - COS(x)) / az).
+                }
+                ELSE {
+                        LOCAL x IS CONSTANT:E^saz. 
+                        RETURN LEXICON("S", (0.5 * (x - 1 / x) - saz) / (saz * az), "C", (0.5 * (x + 1 / x) - 1) / az).
+                }
+        }
 }
 
 // Conic State Extrapolation Routine
-function CSER {
-  parameter r0v0, dt, mu to body:mu, x0 to 0, tol to 5e-9.
-  local rscale to r0v0[0]:mag.
-  local vscale to sqrt(mu / rscale).
-  local r0s to r0v0[0] / rscale.
-  local v0s to r0v0[1] / vscale.
-  local dts to dt * vscale / rscale.
-  local v2s to r0v0[1]:sqrmagnitude * rscale / mu.
-  local alpha to 2 - v2s.
-  local armd1 to v2s - 1.
-  local rvr0s to vdot(r0v0[0], r0v0[1]) / sqrt(mu * rscale).
-  
-  local x to x0.
-  if x0 = 0 { set x to dts * abs(alpha). }
-  local ratio to 1.
-  local x2 to x * x.
-  local z to alpha * x2.
-  local SCz to SnC(z).
-  local x2Cz to x2 * SCz["C"].
-  local f to 0.
-  local df to 0.
-  
-  until abs(ratio) < tol {
-    set f to x + rvr0s * x2Cz + armd1 * x * x2 * SCz["S"] - dts.
-    set df to x * rvr0s * (1 - z * SCz["S"]) + armd1 * x2Cz + 1.
-    set ratio to f / df.
-    set x to x - ratio.
-    set x2 to x * x.
-    set z to alpha * x2.
-    set SCz to SnC(z).
-    set x2Cz to x2 * SCz["C"].
-  }
+FUNCTION cser {
+        DECLARE PARAMETER r0, v0, dt, mu IS BODY:MU, x0 IS 0, tol IS 5e-9.
+        LOCAL rscale IS r0:mag.
+        LOCAL vscale IS SQRT(mu / rscale).
+        LOCAL r0s IS r0 / rscale.
+        LOCAL v0s IS v0 / vscale.
+        LOCAL dts IS dt * vscale / rscale.
+        LOCAL v2s IS v0:SQRMAGNITUDE * rscale / mu.
+        LOCAL alpha IS 2 - v2s.
+        LOCAL armd1 IS v2s - 1.
+        LOCAL rvr0s IS VDOT(r0, v0) / SQRT(mu * rscale).
 
-  local Lf to 1 - x2Cz.
-  local Lg to dts - x2 * x * SCz["S"].
-  
-  local r1 to Lf * r0s + Lg * v0s.
-  local ir1 to 1 / r1:mag.
-  local Lfdot to ir1 * x * (z * SCz["S"] - 1).
-  local Lgdot to 1 - x2Cz * ir1.
+        LOCAL x IS x0.
+        IF x0 = 0 { SET x TO dts * abs(alpha). }
+        LOCAL ratio IS 1.
+        LOCAL x2 IS x * x.
+        LOCAL z IS alpha * x2.
+        LOCAL SCz IS SnC(z).
+        LOCAL x2Cz IS x2 * SCz["C"].
+        LOCAL f IS 0.
+        LOCAL df IS 0.
 
-  local v1 to Lfdot * r0s + Lgdot * v0s.
-  
-  return list(r1 * rscale, v1 * vscale, x).
+        UNTIL ABS(ratio) < tol {
+                SET f TO x + rvr0s * x2Cz + armd1 * x * x2 * SCz["S"] - dts.
+                SET df TO x * rvr0s * (1 - z * SCz["S"]) + armd1 * x2Cz + 1.
+                SET ratio TO f / df.
+                SET x TO x - ratio.
+                SET x2 to x * x.
+                SET z TO alpha * x2.
+                SET SCz TO SnC(z).
+                SET x2Cz TO x2 * SCz["C"].
+        }
+
+        LOCAL Lf IS 1 - x2Cz.
+        LOCAL Lg IS dts - x2 * x * SCz["S"].
+
+        LOCAL r1 IS Lf * r0s + Lg * v0s.
+        LOCAL ir1 IS 1 / r1:MAG.
+        LOCAL Lfdot IS ir1 * x * (z * SCz["S"] - 1).
+        LOCAL Lgdot IS 1 - x2Cz * ir1.
+
+        LOCAL v1 IS Lfdot * r0s + Lgdot * v0s.
+
+        RETURN LIST(r2 * rscale, v1 * vscale, x).
 }
