@@ -369,14 +369,9 @@ FUNCTION targetNormal {
 	DECLARE PARAMETER targetInc.	//	Expects a scalar
 	DECLARE PARAMETER targetLan.	//	Expects a scalar
 	
-	//	First create a vector pointing to the highest point in orbit by rotating the prime vector by a right angle.
-	LOCAL highPoint IS rodrigues(SOLARPRIMEVECTOR, V(0,1,0), 90-targetLan).
-	//	Then create a temporary axis of rotation (short form for 90 deg rotation).
-	LOCAL rotAxis IS V(-highPoint:Z, highPoint:Y, highPoint:X).
-	//	Finally rotate about this axis by a right angle to produce normal vector.
-	LOCAL normalVec IS rodrigues(highPoint, rotAxis, 90-targetInc).
+	LOCAL ANNRM IS lookdirup(solarprimevector, V(0,1,0))*R(0, -targetLan, -targetInc).
 	
-	RETURN -vecYZ(normalVec).
+	RETURN vecYZ(ANNRM:UPVECTOR).
 }
 
 //	EVENT HANDLING FUNCTIONS
