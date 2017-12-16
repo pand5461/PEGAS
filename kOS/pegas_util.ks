@@ -22,8 +22,7 @@ FUNCTION aimAndRoll {
 	DECLARE PARAMETER aimVec.	//	Expects a vector
 	DECLARE PARAMETER rollAng.	//	Expects a scalar
 	
-	LOCAL rollVector IS rodrigues(UP:VECTOR, aimVec, -rollAng).
-	RETURN LOOKDIRUP(aimVec, rollVector).
+	RETURN LOOKDIRUP(aimVec, rollVector) + R(0,0,-rollAng).
 }
 
 //	KSP-MATLAB-KSP vector conversion
